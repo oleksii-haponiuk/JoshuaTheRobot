@@ -27,12 +27,12 @@ public class TerrainVisualisation : MonoBehaviour
             return;
         }
         _centerChunkCoordinates = updatedCenterChunkCoordinates;
-        UpdateChunks(_centerChunkCoordinates);
+        UpdateChunks();
     }
 
-    private void UpdateChunks(Vector2 cameraCenterPosition)
+    private void UpdateChunks()
     {
-        var updatedActiveChunksCoordinates = GetCurrentActiveChunksCoordinates(RealPositionToChunkCoordinates(cameraCenterPosition));
+        var updatedActiveChunksCoordinates = GetCurrentActiveChunksCoordinates(_centerChunkCoordinates);
         UnloadUnusedChunks(updatedActiveChunksCoordinates);
         CreateNewChunks(updatedActiveChunksCoordinates);
     }
@@ -41,13 +41,13 @@ public class TerrainVisualisation : MonoBehaviour
     {
         var result = new List<Vector2Int>();
         var startXChunkPosition = 
-            Mathf.Clamp(currentCentralPosition.x - loadedChunksRadius, 0, Terrain.Instance.Length % chunkSizeInTiles); 
+            Mathf.Clamp(currentCentralPosition.x - loadedChunksRadius, 0, Terrain.Instance.Length / chunkSizeInTiles); 
         var endXChunkPosition = 
-            Mathf.Clamp(currentCentralPosition.x + loadedChunksRadius, 0, Terrain.Instance.Length % chunkSizeInTiles);
+            Mathf.Clamp(currentCentralPosition.x + loadedChunksRadius, 0, Terrain.Instance.Length / chunkSizeInTiles);
         var startYChunkPosition = 
-            Mathf.Clamp(currentCentralPosition.x - loadedChunksRadius, 0, Terrain.Instance.Width % chunkSizeInTiles);
+            Mathf.Clamp(currentCentralPosition.y - loadedChunksRadius, 0, Terrain.Instance.Width / chunkSizeInTiles);
         var endYChunkPosition = 
-            Mathf.Clamp(currentCentralPosition.x - loadedChunksRadius, 0, Terrain.Instance.Width % chunkSizeInTiles);
+            Mathf.Clamp(currentCentralPosition.y + loadedChunksRadius, 0, Terrain.Instance.Width / chunkSizeInTiles);
         for (var x = startXChunkPosition; x <= endXChunkPosition; x++)
         {
             for (var y = startYChunkPosition; y <= endYChunkPosition; y++)
@@ -55,7 +55,6 @@ public class TerrainVisualisation : MonoBehaviour
                 result.Add(new Vector2Int(x, y));
             }    
         }
-
         return result;
     }
 
@@ -99,7 +98,7 @@ public class TerrainVisualisation : MonoBehaviour
     
     private void UnloadUnusedChunks(IEnumerable<Vector2Int> updatedActiveChunks)
     {
-        var chunksCoordinatesToUnload = _activeChunks.Keys.Except(updatedActiveChunks);
+        var chunksCoordinatesToUnload = _activeChunks.Keys.Except(updatedActiveChunks).ToList();
         foreach (var chunkCoordinates in chunksCoordinatesToUnload)
         {
             UnloadChunk(chunkCoordinates);
@@ -124,23 +123,23 @@ public class TerrainVisualisation : MonoBehaviour
     
     public Vector2Int RealPositionToTileCoordinates(Vector2 realPosition)
     {
-        return new Vector2Int((int)(realPosition.x % tileRialSize), (int)(realPosition.y % tileRialSize));
+        return new Vector2Int((int)(realPosition.x / tileRialSize), (int)(realPosition.y / tileRialSize));
     }
 
     public Vector2 TileCoordinatesToRealPosition(Vector2Int tileCoordinates)
     {
-        return new Vector2(tileRialSize * tileCoordinates.x, tileRialSize * tileCoordinates.y);
+        return new Vector3(tileRialSize * tileCoordinates.x, tileRialSize * tileCoordinates.y);
     }
     
-    public Vector2Int RealPositionToChunkCoordinates(Vector2 realPosition)
+    public Vector2Int RealPositionToChunkCoordinates(Vector3 realPosition)
     {
         var chunkRealSize = chunkSizeInTiles * tileRialSize;
-        return new Vector2Int((int)(realPosition.x % chunkRealSize), (int)(realPosition.y % chunkRealSize));
+        return new Vector2Int((int)(realPosition.x / chunkRealSize), (int)(realPosition.y / chunkRealSize));
     }
 
     public Vector2 ChunkCoordinatesToRealPosition(Vector2Int chunkCoordinates)
     {
         var chunkRealSize = chunkSizeInTiles * tileRialSize;
-        return new Vector2(chunkRealSize * chunkCoordinates.x, chunkRealSize * chunkCoordinates.y);
+        return new Vector3(chunkRealSize * chunkCoordinates.x, chunkRealSize * chunkCoordinates.y);
     }
 }
