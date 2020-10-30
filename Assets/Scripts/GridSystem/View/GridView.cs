@@ -4,7 +4,7 @@ using System.Collections;
 using System.Linq;
 using System.Security.Cryptography;
 using UnityEngine;
-public class TerrainVisualisation : MonoBehaviour
+public class GridView : MonoBehaviour
 {
     [SerializeField] private float tileRialSize = 1f;
     
@@ -18,6 +18,16 @@ public class TerrainVisualisation : MonoBehaviour
     
     private Vector2Int _centerChunkCoordinates;
 
+    
+    private void Awake()
+    {
+        Grid.OnUpdateTile += HandleUpdateTile;
+    }
+
+    private void OnDestroy()
+    {
+        Grid.OnUpdateTile -= HandleUpdateTile;
+    }
 
     private void Update()
     {
@@ -29,6 +39,22 @@ public class TerrainVisualisation : MonoBehaviour
         _centerChunkCoordinates = updatedCenterChunkCoordinates;
         UpdateChunks();
     }
+    
+    private void HandleUpdateTile(int x, int y, Tile tile)
+    {
+        var chunkCoordinates = TileCoordinatesToChunkCoordinates(new Vector2Int(x, y));
+        var chunkOffsetCoordinates 
+            = new Vector2Int(x % (chunkCoordinates.x * chunkSizeInTiles), y % (chunkCoordinates.y * chunkSizeInTiles));
+
+        if (_activeChunks.ContainsKey(chunkCoordinates))
+        {
+            var oldTile = _activeChunks[chunkCoordinates].Tiles[chunkOffsetCoordinates.x, chunkOffsetCoordinates.y];
+            Destroy(oldTile);
+            var tileGameObject = Instantiate(tile.tileType.tilePrefab, gameObject.transform, true);
+            tileGameObject.transform.position = new Vector2(x * tileRialSize, y * tileRialSize);
+            _activeChunks[chunkCoordinates].Tiles[chunkOffsetCoordinates.x, chunkOffsetCoordinates.y] = tileGameObject;
+        }
+    }
 
     private void UpdateChunks()
     {
@@ -39,18 +65,18 @@ public class TerrainVisualisation : MonoBehaviour
 
     private List<Vector2Int> GetCurrentActiveChunksCoordinates(Vector2Int currentCentralPosition)
     {
+        var maxChunksLenght = Grid.Instance.Length / chunkSizeInTiles;
+        var maxChunksWidth = Grid.Instance.Width / chunkSizeInTiles;
+        
+        var firstChunkX = Mathf.Clamp(currentCentralPosition.x - loadedChunksRadius, 0, maxChunksLenght); 
+        var lastChunkX = Mathf.Clamp(currentCentralPosition.x + loadedChunksRadius, 0, maxChunksLenght);
+        var firstChunkY = Mathf.Clamp(currentCentralPosition.y - loadedChunksRadius, 0, maxChunksWidth);
+        var lastChunkY = Mathf.Clamp(currentCentralPosition.y + loadedChunksRadius, 0, maxChunksWidth);
+       
         var result = new List<Vector2Int>();
-        var startXChunkPosition = 
-            Mathf.Clamp(currentCentralPosition.x - loadedChunksRadius, 0, Terrain.Instance.Length / chunkSizeInTiles); 
-        var endXChunkPosition = 
-            Mathf.Clamp(currentCentralPosition.x + loadedChunksRadius, 0, Terrain.Instance.Length / chunkSizeInTiles);
-        var startYChunkPosition = 
-            Mathf.Clamp(currentCentralPosition.y - loadedChunksRadius, 0, Terrain.Instance.Width / chunkSizeInTiles);
-        var endYChunkPosition = 
-            Mathf.Clamp(currentCentralPosition.y + loadedChunksRadius, 0, Terrain.Instance.Width / chunkSizeInTiles);
-        for (var x = startXChunkPosition; x <= endXChunkPosition; x++)
+        for (var x = firstChunkX; x <= lastChunkX; x++)
         {
-            for (var y = startYChunkPosition; y <= endYChunkPosition; y++)
+            for (var y = firstChunkY; y <= lastChunkY; y++)
             {
                 result.Add(new Vector2Int(x, y));
             }    
@@ -82,8 +108,8 @@ public class TerrainVisualisation : MonoBehaviour
                 {
                     var xGridCoordinates = x + xOffset;
                     var yGridCoordinates = y + yOffset;
-                    var tile = Terrain.Instance.GetTile(xGridCoordinates, yGridCoordinates);
-                    var tileGameObject = Instantiate(tile.tileType.tilePrefab);
+                    var tile = Grid.Instance.GetTile(xGridCoordinates, yGridCoordinates);
+                    var tileGameObject = Instantiate(tile.tileType.tilePrefab, gameObject.transform, true);
                     tileGameObject.transform.position = new Vector2(xGridCoordinates * tileRialSize, yGridCoordinates * tileRialSize);
                     tilesGameObjects[x, y] = tileGameObject;
                 } 
@@ -141,5 +167,10 @@ public class TerrainVisualisation : MonoBehaviour
     {
         var chunkRealSize = chunkSizeInTiles * tileRialSize;
         return new Vector3(chunkRealSize * chunkCoordinates.x, chunkRealSize * chunkCoordinates.y);
+    }
+    
+    public Vector2Int TileCoordinatesToChunkCoordinates(Vector2Int tileCoordinates)
+    {
+        return new Vector2Int(tileCoordinates.x / chunkSizeInTiles, tileCoordinates.y / chunkSizeInTiles);
     }
 }

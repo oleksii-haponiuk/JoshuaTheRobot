@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b9c05d6567ff4114a641e25ce1f06f07, type: 3}
-  m_Name: 2defaultTileType
+  m_Name: 1TileSO
   m_EditorClassIdentifier: 
   id: 0
   tilePrefab: {fileID: 2986499897211641650, guid: 51c765efb610d405c9fd9e8eff004138,
