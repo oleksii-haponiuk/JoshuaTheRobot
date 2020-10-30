@@ -16,12 +16,10 @@ public class Terrain : MonoBehaviour
     
     public int Length => length;
 
-    public static Terrain Instance
-    {
-        get;
-        private set;
-    }
-    void Awake()
+    public static Terrain Instance { get; private set; }
+    
+    
+    private void Awake()
     {
         Instance = this;
         _tiles = new Tile[width, length];
@@ -32,11 +30,6 @@ public class Terrain : MonoBehaviour
                 _tiles[x, y] = new Tile(x, y, defaultTileType);
             } 
         }
-    }
-
-    void Update()
-    {
-        
     }
 
     public Tile GetTile(int x, int y)
